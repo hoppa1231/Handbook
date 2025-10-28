@@ -1,0 +1,63 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: development
+    ports:
+      - "${PORT_BACKEND:-3000}:${PORT_BACKEND:-3000}"
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/tsconfig.json:/app/tsconfig.json
+      - backend_node_modules:/app/node_modules
+      - ./openapi:/app/openapi:ro
+    command: npm run dev
+
+  backend_flask:
+    profiles: ["flask"]
+    build:
+      context: .
+      dockerfile: backend_flask/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./backend_flask/.env
+    environment:
+      FLASK_ENV: development
+    ports:
+      - "${PORT_BACKEND:-3000}:${PORT_BACKEND:-3000}"
+    volumes:
+      - ./openapi:/app/openapi:ro
+
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    env_file:
+      - ./backend/.env
+    environment:
+      POSTGRES_DB: handbook
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "${PORT_DATABASE:-5432}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  backend_node_modules:
+  db_data:

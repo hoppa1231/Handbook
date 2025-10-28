@@ -1,0 +1,640 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Handbook API",
+    "version": "1.0.0",
+    "description": "REST API for managing suppliers, products, requests, and related entities."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health check",
+        "description": "Returns service status and confirms database connectivity.",
+        "responses": {
+          "200": {
+            "description": "Service is healthy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/suppliers": {
+      "get": {
+        "summary": "List suppliers",
+        "responses": {
+          "200": {
+            "description": "Array of suppliers.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Supplier"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create supplier",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Supplier created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Supplier"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "summary": "List products",
+        "responses": {
+          "200": {
+            "description": "Array of products.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Product"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create product",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Product created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/requests": {
+      "get": {
+        "summary": "List requests",
+        "responses": {
+          "200": {
+            "description": "Array of requests with items.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Request"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create request",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Request created with optional items.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Request"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          }
+        }
+      },
+      "Supplier": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "ACME Corp"
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 200,
+            "nullable": true
+          },
+          "contact": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "website": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "rating": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "SupplierCreate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "contact": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "website": {
+            "type": "string",
+            "format": "uri"
+          },
+          "rating": {
+            "type": "number",
+            "format": "float"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "partNumber": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100
+          },
+          "model": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100
+          },
+          "serialNumber": {
+            "type": "integer",
+            "nullable": true
+          },
+          "scheme": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
+          },
+          "posScheme": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100
+          },
+          "material": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
+          },
+          "size": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 300
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "categoryDescription": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "partNumber",
+          "name"
+        ]
+      },
+      "ProductCreate": {
+        "type": "object",
+        "properties": {
+          "partNumber": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "brand": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "serialNumber": {
+            "type": "integer"
+          },
+          "scheme": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "posScheme": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "material": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "size": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "category": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "partNumber",
+          "name"
+        ]
+      },
+      "RequestItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "partNumber": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "quantity": {
+            "type": "integer",
+            "nullable": true
+          },
+          "unit": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 20
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100
+          },
+          "model": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100
+          },
+          "serialNumber": {
+            "type": "integer",
+            "nullable": true
+          },
+          "scheme": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
+          },
+          "posScheme": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100
+          },
+          "material": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 300
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "totalPrice": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "requestId": {
+            "type": "integer",
+            "nullable": true
+          },
+          "productId": {
+            "type": "integer",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "Request": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "idRequest": {
+            "type": "integer"
+          },
+          "typeRequest": {
+            "type": "string",
+            "nullable": true
+          },
+          "typeDescription": {
+            "type": "string",
+            "nullable": true
+          },
+          "datetimeComing": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "datetimeDelivery": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusDescription": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalPrice": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestItem"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "idRequest",
+          "datetimeComing",
+          "items"
+        ]
+      },
+      "RequestItemCreate": {
+        "type": "object",
+        "properties": {
+          "partNumber": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "unit": {
+            "type": "string",
+            "maxLength": 20
+          },
+          "brand": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "serialNumber": {
+            "type": "integer"
+          },
+          "scheme": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "posScheme": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "material": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "float"
+          },
+          "totalPrice": {
+            "type": "number",
+            "format": "float"
+          },
+          "productId": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "RequestCreate": {
+        "type": "object",
+        "properties": {
+          "idRequest": {
+            "type": "integer"
+          },
+          "typeRequest": {
+            "type": "string"
+          },
+          "datetimeComing": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "datetimeDelivery": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string"
+          },
+          "totalPrice": {
+            "type": "number",
+            "format": "float"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestItemCreate"
+            }
+          }
+        },
+        "required": [
+          "idRequest",
+          "datetimeComing"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      }
+    }
+  }
+}
