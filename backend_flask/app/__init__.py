@@ -6,6 +6,7 @@ from sqlalchemy import text
 from .config import load_settings
 from .database import init_database, db
 from .routes import api_bp
+from .routes.ui import ui_bp
 from .seed import seed_reference_data
 
 
@@ -44,6 +45,7 @@ def create_app() -> Flask:
     init_database(app)
 
     app.register_blueprint(api_bp)
+    app.register_blueprint(ui_bp)
 
     @app.errorhandler(404)
     def not_found(_):

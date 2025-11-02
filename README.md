@@ -1,14 +1,10 @@
-﻿# Handbook Backends
+# Handbook Backend
 
-Two interchangeable backends share one PostgreSQL database and API contract:
-1. **Node.js + Express + TypeScript** (`backend/`)
-2. **Flask + SQLAlchemy** (`backend_flask/`)
-
-Both variants expose the same `/api` endpoints and rely on Docker Compose for local orchestration.
+Проект разворачивает Flask + SQLAlchemy сервис (`backend_flask/`), работающий с PostgreSQL через Docker Compose. Для удобства поддержки в репозитории также сохранён Node.js каркас (`backend/`), но по умолчанию сервис запускается только на Flask.
 
 ## Directory map
-- `backend/` - Express implementation with TypeScript
-- `backend_flask/` - Flask implementation with SQLAlchemy
+- `backend/` - (опционально) Express implementation with TypeScript
+- `backend_flask/` - Flask implementation with SQLAlchemy (основной сервис)
 - `docker-compose.yml` - services for both backends and PostgreSQL
 - `README.md` - this guide
 
@@ -35,53 +31,45 @@ copy backend_flask\.env.example backend_flask\.env
 ```
 
 Important keys (use the same values in both files):
-- `PORT_BACKEND` - API port published to the host (default 3000)
+- `PORT_BACKEND` - API/UI port published to the host (default 3000)
 - `PORT_DATABASE` - host port for PostgreSQL (default 5432)
-- `DATABASE_URL` - connection string inside containers
-- `SECRET_KEY` (Flask only) - Flask session key
-
-## Running the Node.js backend (default)
-```powershell
-docker compose --env-file backend\.env up --build
-```
-- Service name: `backend`
-- Auto-reloads with `ts-node-dev`
-- Initializes schema and lookup data at startup (`backend/src/db/schema.ts`)
-- Healthcheck: `http://localhost:${PORT_BACKEND}/api/health`
-
-Manual type-check:
-```powershell
-docker compose exec backend npm run build
-```
+- `DATABASE_URL` - connection string inside containers (`postgresql+psycopg2://postgres:postgres@db:5432/handbook`)
+- `SECRET_KEY` - Flask session key
 
 ## Running the Flask backend
-The Flask service lives in a separate Compose profile so it does not collide with the Node service on the same port.
-
+Build and start the API together with PostgreSQL:
 ```powershell
-docker compose --profile flask --env-file backend_flask\.env up --build backend_flask db
+docker compose --env-file backend_flask\.env up --build backend_flask db
 ```
 - Service name: `backend_flask`
 - Uses `gunicorn` in the container (`backend_flask/Dockerfile`)
 - Creates tables through SQLAlchemy models and seeds lookup values in `app/seed.py`
-- Endpoints mirror the Node implementation
+- Endpoints exposed at `http://localhost:${PORT_BACKEND}/api`
 
 To switch between stacks, stop the current profile:
 ```powershell
 docker compose down
 ```
-then bring up the desired variant (Node or Flask).
+then bring up the Flask stack again (Node.js service is disabled by default).
 
-## REST API (shared contract)
+## REST API (основные точки)
 Base path: `/api`
-- `GET /health` - pings database
-- `GET /suppliers`, `POST /suppliers`
-- `GET /products`, `POST /products`
-- `GET /requests`, `POST /requests` (accepts optional `items` array and stores request + positions in a single transaction)
+- `GET /health` — пинг и проверка БД
+- `GET /suppliers`, `POST /suppliers`, `PUT /suppliers/<id>`, `DELETE /suppliers/<id>`
+- `GET /products`, `POST /products`, `GET /products/<id>`, `PUT /products/<id>`, `DELETE /products/<id>`
+- `GET /requests`, `POST /requests` (массовое создание с позициями)
+- `GET /products/<id>/competition` — конкурентная карта по товару
+- `GET /supplier-prices`, `POST /supplier-prices`, `PUT /supplier-prices/<id>`, `DELETE /supplier-prices/<id>`
 
-Interactive documentation is served from the shared OpenAPI definition:
+Interactive documentation:
 - JSON: `http://localhost:${PORT_BACKEND}/api/openapi.json`
 - Swagger UI: `http://localhost:${PORT_BACKEND}/api/docs`
-- Specification lives in `openapi/openapi.json`; edit once and both stacks pick it up automatically.
+- Спецификация: `openapi/openapi.json`
+
+## Web UI
+- Доступно по адресу `http://localhost:${PORT_BACKEND}/` сразу после поднятия контейнера.
+- Позволяет выполнять CRUD для поставщиков, товаров и записей о ценах, быстрый поиск по таблицам и построение конкурентной карты (таблица предложений поставщиков).
+- Работает поверх REST-эндпоинтов, дополнительных прокси не требуется (достаточно пробросить порт `PORT_BACKEND`).
 ## Importing data from Excel
 - Place the workbook (for example, `ИТОГ 03.12.24.xlsx`) in the project directory or pass an absolute path.
 - Run the importer; it reads `DATABASE_URL` from `.env` automatically:
@@ -119,3 +107,18 @@ Example payload for creating a request:
 1. Add proper migrations (Prisma/Knex for Node, Alembic for Flask) instead of auto-creating tables.
 2. Extend API with update/delete endpoints and supplier price management.
 3. Add validation (zod/express-validator or marshmallow/pydantic) and automated tests for both stacks.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

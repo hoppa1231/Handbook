@@ -42,3 +42,30 @@ def create_supplier():
     db.session.commit()
 
     return jsonify(serialize_supplier(supplier)), 201
+
+
+@api_bp.put("/suppliers/<int:supplier_id>")
+def update_supplier(supplier_id: int):
+    payload = request.get_json(silent=True) or {}
+    supplier = Supplier.query.get_or_404(supplier_id)
+
+    name = payload.get("name")
+    if name is not None:
+        if not name:
+            return jsonify({"message": 'Field "name" cannot be empty'}), 400
+        supplier.name = name
+
+    for field in ("address", "contact", "website", "rating"):
+        if field in payload:
+            setattr(supplier, field, payload[field])
+
+    db.session.commit()
+    return jsonify(serialize_supplier(supplier))
+
+
+@api_bp.delete("/suppliers/<int:supplier_id>")
+def delete_supplier(supplier_id: int):
+    supplier = Supplier.query.get_or_404(supplier_id)
+    db.session.delete(supplier)
+    db.session.commit()
+    return ("", 204)
