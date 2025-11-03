@@ -8,7 +8,7 @@
   </head>
   <body>
     <header>
-      <h1>Handbook Admin Panel</h1>
+      <h1>Панель управления справочником</h1>
       <p>Управление поставщиками, товарами и конкурентной картой</p>
       <div id="notification" role="status" aria-live="polite"></div>
     </header>
@@ -116,13 +116,14 @@
             </label>
             <label>
               Категория
-              <input type="text" id="product-category" placeholder="valve, wall..." />
+              <select type="text" id="product-category" placeholder="valve, wall..."></select>
+            </label>
+            <label>
+              Комментарий
+              <textarea id="product-comment" rows="2"></textarea>
             </label>
           </div>
-          <label>
-            Комментарий
-            <textarea id="product-comment" rows="2"></textarea>
-          </label>
+          
           <div class="actions">
             <button type="submit">Сохранить</button>
             <button type="button" id="product-reset">Сброс</button>

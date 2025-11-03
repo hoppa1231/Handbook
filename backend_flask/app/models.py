@@ -107,7 +107,7 @@ class SupplierProductPrice(db.Model):
     supplier_id: Mapped[int] = mapped_column(Integer, ForeignKey("suppliers.id"), nullable=False)
     total_price: Mapped[Optional[float]] = mapped_column(Float)
     lead_time: Mapped[Optional[timedelta]] = mapped_column(INTERVAL)
-    cy: Mapped[Optional[float]] = mapped_column(Float)
+    cy: Mapped[Optional[str]] = mapped_column(String(30), default="Рубль")
 
     product: Mapped[Product] = relationship(back_populates="prices")
     supplier: Mapped[Supplier] = relationship(back_populates="prices")

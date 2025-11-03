@@ -7,6 +7,11 @@ const state = {
   productFilter: "",
   prices: [],
   priceFilter: "",
+  types: {
+    productCategories: [],
+    requestTypes: [],
+    requestStatuses: [],
+  },
   selectedSupplierId: null,
   selectedProductId: null,
   selectedPriceId: null,
@@ -59,6 +64,12 @@ function productMap() {
   return new Map(state.products.map((product) => [product.id, product]));
 }
 
+function getCategoryName(code) {
+  if (!code) return "";
+  const entry = state.types.productCategories.find((item) => item.id === code);
+  return entry ? entry.name : code;
+}
+
 function createActionButton(label, className, handler) {
   const button = document.createElement("button");
   button.type = "button";
@@ -82,11 +93,12 @@ function switchTab(tabId, { silent = false } = {}) {
   if (tabId === "competition") {
     const select = document.querySelector("#competition-product-select");
     if (select) {
-      const hasOption = Array.from(select.options).some(
-        (option) => Number(option.value) === state.selectedProductId
-      );
-      if (!select.value && state.selectedProductId && hasOption) {
-        select.value = String(state.selectedProductId);
+      const currentId = state.selectedProductId;
+      if (currentId && !select.value) {
+        const hasOption = Array.from(select.options).some((option) => Number(option.value) === currentId);
+        if (hasOption) {
+          select.value = String(currentId);
+        }
       }
       if (select.value) {
         refreshCompetition({ silent: true }).catch((error) => {
@@ -99,6 +111,32 @@ function switchTab(tabId, { silent = false } = {}) {
   }
 }
 
+async function loadTypes() {
+  try {
+    const data = await fetchJSON(`${API_BASE}/types`);
+    state.types.productCategories = data?.product_categories ?? [];
+    state.types.requestTypes = data?.request_types ?? [];
+    state.types.requestStatuses = data?.request_statuses ?? [];
+    populateCategorySelect();
+  } catch (error) {
+    showMessage(`Не удалось загрузить справочники${error.message ? `: ${error.message}` : ""}`, "error");
+  }
+}
+
+function populateCategorySelect() {
+  const select = document.querySelector("#product-category");
+  if (!select) return;
+  const options = ["<option value=\"\">Без категории</option>"];
+  state.types.productCategories.forEach((category) => {
+    options.push(`<option value="${category.id}">${category.name}</option>`);
+  });
+  const currentValue = select.value;
+  select.innerHTML = options.join("");
+  if (currentValue) {
+    select.value = currentValue;
+  }
+}
+
 async function loadSuppliers() {
   state.suppliers = await fetchJSON(`${API_BASE}/suppliers`);
   renderSuppliers();
@@ -107,15 +145,10 @@ async function loadSuppliers() {
 
 function renderSuppliers() {
   const tbody = document.querySelector("#suppliers-table tbody");
-  const filter = state.supplierFilter.trim().toLowerCase();
+  const filter = (state.supplierFilter || "").trim().toLowerCase();
   const suppliers = filter
     ? state.suppliers.filter((supplier) => {
-        const values = [
-          supplier.name,
-          supplier.address,
-          supplier.contact,
-          supplier.website,
-        ].filter(Boolean);
+        const values = [supplier.name, supplier.address, supplier.contact, supplier.website].filter(Boolean);
         return values.some((value) => value.toLowerCase().includes(filter));
       })
     : [...state.suppliers];
@@ -145,8 +178,7 @@ function renderSuppliers() {
 
     const actionsTd = document.createElement("td");
     actionsTd.className = "actions-col";
-    const deleteBtn = createActionButton("Удалить", "danger", () => deleteSupplier(supplier.id));
-    actionsTd.appendChild(deleteBtn);
+    actionsTd.appendChild(createActionButton("Удалить", "danger", () => deleteSupplier(supplier.id)));
     tr.appendChild(actionsTd);
 
     tbody.appendChild(tr);
@@ -156,12 +188,11 @@ function renderSuppliers() {
 function populateSupplierSelects() {
   const select = document.querySelector("#price-supplier");
   if (!select) return;
-  const options =
+  select.innerHTML =
     '<option value="">Выберите поставщика</option>' +
     state.suppliers
       .map((supplier) => `<option value="${supplier.id}">${supplier.name}</option>`)
       .join("");
-  select.innerHTML = options;
 }
 
 function selectSupplier(id) {
@@ -189,7 +220,8 @@ function resetSupplierForm() {
 
 async function submitSupplier(event) {
   event.preventDefault();
-  const name = document.querySelector("#supplier-name")?.value.trim();
+  const nameInput = document.querySelector("#supplier-name");
+  const name = nameInput?.value.trim();
   if (!name) {
     showMessage("Введите название поставщика", "error");
     return;
@@ -252,21 +284,24 @@ async function loadProducts() {
   if (state.selectedProductId && !state.products.some((product) => product.id === state.selectedProductId)) {
     state.selectedProductId = null;
   }
-  renderProducts();
   populateProductSelects();
+  populateCategorySelect();
+  renderProducts();
 }
 
 function renderProducts() {
   const tbody = document.querySelector("#products-table tbody");
-  const filter = state.productFilter.trim().toLowerCase();
+  const filter = (state.productFilter || "").trim().toLowerCase();
   const products = filter
     ? state.products.filter((product) => {
+        const categoryName = getCategoryName(product.category);
         const values = [
           product.partNumber,
           product.name,
           product.brand,
           product.model,
           product.comment,
+          categoryName,
         ].filter(Boolean);
         return values.some((value) => value.toLowerCase().includes(filter));
       })
@@ -284,11 +319,13 @@ function renderProducts() {
   products.forEach((product) => {
     const tr = document.createElement("tr");
     tr.dataset.id = product.id;
+    const categoryName = getCategoryName(product.category);
+    const brandCell = [product.brand, categoryName].filter(Boolean).join(" / ");
     tr.innerHTML = `
       <td>${product.id}</td>
       <td>${product.partNumber ?? ""}</td>
       <td>${product.name ?? ""}</td>
-      <td>${product.brand ?? ""}</td>
+      <td>${brandCell}</td>
     `;
     tr.addEventListener("click", () => selectProduct(product.id));
     if (state.selectedProductId === product.id) {
@@ -297,8 +334,7 @@ function renderProducts() {
 
     const actionsTd = document.createElement("td");
     actionsTd.className = "actions-col";
-    const deleteBtn = createActionButton("Удалить", "danger", () => deleteProduct(product.id));
-    actionsTd.appendChild(deleteBtn);
+    actionsTd.appendChild(createActionButton("Удалить", "danger", () => deleteProduct(product.id)));
     tr.appendChild(actionsTd);
 
     tbody.appendChild(tr);
@@ -334,15 +370,16 @@ function selectProduct(id) {
   document.querySelector("#product-brand").value = product.brand ?? "";
   document.querySelector("#product-model").value = product.model ?? "";
   document.querySelector("#product-serial").value =
-    product.serialNumber !== null && product.serialNumber !== undefined
-      ? product.serialNumber
-      : "";
+    product.serialNumber !== null && product.serialNumber !== undefined ? product.serialNumber : "";
   document.querySelector("#product-scheme").value = product.scheme ?? "";
   document.querySelector("#product-pos-scheme").value = product.posScheme ?? "";
   document.querySelector("#product-material").value = product.material ?? "";
   document.querySelector("#product-size").value = product.size ?? "";
   document.querySelector("#product-comment").value = product.comment ?? "";
-  document.querySelector("#product-category").value = product.category ?? "";
+  const categorySelect = document.querySelector("#product-category");
+  if (categorySelect) {
+    categorySelect.value = product.category ?? "";
+  }
   renderProducts();
 }
 
@@ -352,6 +389,10 @@ function resetProductForm() {
   form?.reset();
   const idField = document.querySelector("#product-id");
   if (idField) idField.value = "";
+  const categorySelect = document.querySelector("#product-category");
+  if (categorySelect) {
+    categorySelect.value = "";
+  }
   renderProducts();
 }
 
@@ -368,6 +409,7 @@ async function submitProduct(event) {
     return;
   }
 
+  const categorySelect = document.querySelector("#product-category");
   const payload = {
     partNumber,
     name,
@@ -379,10 +421,13 @@ async function submitProduct(event) {
     material: document.querySelector("#product-material")?.value.trim() || null,
     size: document.querySelector("#product-size")?.value.trim() || null,
     comment: document.querySelector("#product-comment")?.value.trim() || null,
-    category: document.querySelector("#product-category")?.value.trim() || null,
+    category: categorySelect ? categorySelect.value : null,
   };
   if (payload.serialNumber === "") {
     delete payload.serialNumber;
+  }
+  if (payload.category === "") {
+    payload.category = null;
   }
 
   try {
@@ -488,19 +533,21 @@ async function loadPrices() {
 
 function renderPrices() {
   const tbody = document.querySelector("#prices-table tbody");
-  const filter = state.priceFilter.trim().toLowerCase();
+  const filter = (state.priceFilter || "").trim().toLowerCase();
   const productsLookup = productMap();
   const suppliersLookup = supplierMap();
   const prices = filter
     ? state.prices.filter((price) => {
         const product = productsLookup.get(price.productId);
         const supplier = suppliersLookup.get(price.supplierId);
+        const categoryName = product ? getCategoryName(product.category) : "";
         const values = [
           price.totalPrice?.toString(),
           price.currency,
           product?.partNumber,
           product?.name,
           supplier?.name,
+          categoryName,
         ].filter(Boolean);
         return values.some((value) => value.toLowerCase().includes(filter));
       })
@@ -520,9 +567,13 @@ function renderPrices() {
     tr.dataset.id = price.id;
     const product = productsLookup.get(price.productId);
     const supplier = suppliersLookup.get(price.supplierId);
+    const categoryName = product ? getCategoryName(product.category) : "";
+    const productCell = product
+      ? `${product.partNumber} — ${product.name}${categoryName ? ` (${categoryName})` : ""}`
+      : price.productId;
     tr.innerHTML = `
       <td>${price.id}</td>
-      <td>${product ? `${product.partNumber} — ${product.name}` : price.productId}</td>
+      <td>${productCell}</td>
       <td>${supplier ? supplier.name : price.supplierId}</td>
       <td>${price.totalPrice ?? ""}</td>
       <td>${price.leadTimeDays ?? ""}</td>
@@ -535,8 +586,7 @@ function renderPrices() {
 
     const actionsTd = document.createElement("td");
     actionsTd.className = "actions-col";
-    const deleteBtn = createActionButton("Удалить", "danger", () => deletePrice(price.id));
-    actionsTd.appendChild(deleteBtn);
+    actionsTd.appendChild(createActionButton("Удалить", "danger", () => deletePrice(price.id)));
     tr.appendChild(actionsTd);
 
     tbody.appendChild(tr);
@@ -662,13 +712,14 @@ function bindEvents() {
 
 async function bootstrap() {
   bindEvents();
+  await loadTypes();
   try {
     await Promise.all([loadSuppliers(), loadProducts()]);
     await loadPrices();
   } catch (error) {
     showMessage(error.message, "error");
   }
-  switchTab(state.activeTab, {silent: true});
+  switchTab(state.activeTab, { silent: true });
 }
 
 bootstrap();

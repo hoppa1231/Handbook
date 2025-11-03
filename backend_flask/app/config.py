@@ -6,7 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
-@dataclass(slots=True)
+@dataclass()
 class Settings:
     flask_env: str
     secret_key: str
