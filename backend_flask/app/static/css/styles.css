@@ -104,7 +104,9 @@ form {
 
 .toolbar {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: flex-start;
   margin-bottom: 0.75rem;
 }
 
@@ -220,6 +222,52 @@ table {
   border-collapse: collapse;
   margin-top: 0.5rem;
   font-size: 0.9rem;
+}
+
+.columns-dropdown {
+  position: relative;
+}
+
+.columns-dropdown button {
+  white-space: nowrap;
+}
+
+.columns-toggle {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  display: none;
+  gap: 0.5rem 1rem;
+  flex-direction: column;
+  padding: 0.75rem;
+  min-width: 200px;
+  max-width: 320px;
+  max-height: 320px;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
+  z-index: 5;
+}
+
+.columns-toggle.open {
+  display: flex;
+}
+
+.columns-toggle .checkbox-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.table-wide th,
+.table-wide td {
+  max-width: 220px;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 table thead {

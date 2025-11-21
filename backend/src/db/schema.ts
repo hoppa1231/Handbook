@@ -20,7 +20,12 @@ const schemaStatements: string[] = [
     address varchar(200),
     contact varchar(100),
     website varchar(100),
-    rating double precision
+    rating double precision,
+    nomenclature text,
+    counterparty_type text,
+    tech_audit text,
+    fin_audit text,
+    work_experience text
   )`,
   `create table if not exists products (
     id serial primary key,
@@ -80,7 +85,13 @@ const migrationStatements: string[] = [
      alter column pos_scheme type varchar(100) using pos_scheme::text`,
   `alter table if exists request_items
      alter column part_number type varchar(100) using part_number::text,
-     alter column pos_scheme type varchar(100) using pos_scheme::text`
+     alter column pos_scheme type varchar(100) using pos_scheme::text`,
+  `alter table if exists suppliers
+     add column if not exists nomenclature text,
+     add column if not exists counterparty_type text,
+     add column if not exists tech_audit text,
+     add column if not exists fin_audit text,
+     add column if not exists work_experience text`
 ];
 
 const seedStatements: string[] = [

@@ -35,7 +35,7 @@ SUPPLIER_GROUP_START = 12
 SUPPLIER_GROUP_WIDTH = 3  # supplier name, price, lead time
 
 
-@dataclass(slots=True)
+@dataclass()
 class SupplierColumn:
     name: str
     price_idx: int

@@ -13,6 +13,11 @@ def serialize_supplier(supplier: Supplier) -> dict:
         "contact": supplier.contact,
         "website": supplier.website,
         "rating": supplier.rating,
+        "nomenclature": supplier.nomenclature,
+        "counterpartyType": supplier.counterparty_type,
+        "techAudit": supplier.tech_audit,
+        "finAudit": supplier.fin_audit,
+        "workExperience": supplier.work_experience,
     }
 
 
@@ -30,12 +35,23 @@ def create_supplier():
     if not name:
         return jsonify({"message": 'Field "name" is required'}), 400
 
+    def pick_value(*keys):
+        for key in keys:
+            if key in payload:
+                return payload[key]
+        return None
+
     supplier = Supplier(
         name=name,
         address=payload.get("address"),
         contact=payload.get("contact"),
         website=payload.get("website"),
         rating=payload.get("rating"),
+        nomenclature=payload.get("nomenclature"),
+        counterparty_type=pick_value("counterpartyType", "counterparty_type"),
+        tech_audit=pick_value("techAudit", "tech_audit"),
+        fin_audit=pick_value("finAudit", "fin_audit"),
+        work_experience=pick_value("workExperience", "work_experience"),
     )
 
     db.session.add(supplier)
@@ -55,9 +71,25 @@ def update_supplier(supplier_id: int):
             return jsonify({"message": 'Field "name" cannot be empty'}), 400
         supplier.name = name
 
-    for field in ("address", "contact", "website", "rating"):
-        if field in payload:
-            setattr(supplier, field, payload[field])
+    field_mapping = {
+        "address": "address",
+        "contact": "contact",
+        "website": "website",
+        "rating": "rating",
+        "nomenclature": "nomenclature",
+        "counterpartyType": "counterparty_type",
+        "counterparty_type": "counterparty_type",
+        "techAudit": "tech_audit",
+        "tech_audit": "tech_audit",
+        "finAudit": "fin_audit",
+        "fin_audit": "fin_audit",
+        "workExperience": "work_experience",
+        "work_experience": "work_experience",
+    }
+
+    for key, model_field in field_mapping.items():
+        if key in payload:
+            setattr(supplier, model_field, payload[key])
 
     db.session.commit()
     return jsonify(serialize_supplier(supplier))

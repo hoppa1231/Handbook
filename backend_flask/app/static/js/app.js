@@ -1,8 +1,26 @@
 ﻿const API_BASE = "/api";
 
+const SUPPLIER_COLUMNS = [
+  { key: "id", label: "ID", always: true },
+  { key: "name", label: "Название" },
+  { key: "contact", label: "Контакты" },
+  { key: "rating", label: "Рейтинг" },
+  { key: "website", label: "Сайт" },
+  { key: "nomenclature", label: "Номенклатура" },
+  { key: "counterpartyType", label: "Тип контрагента" },
+  { key: "techAudit", label: "Тех. аудит" },
+  { key: "finAudit", label: "Фин. аудит" },
+  { key: "workExperience", label: "Опыт работы" },
+  { key: "actions", label: "Действия", always: true },
+];
+
 const state = {
   suppliers: [],
   supplierFilter: "",
+  supplierColumnsVisible: SUPPLIER_COLUMNS.reduce((acc, col) => {
+    if (!col.always) acc[col.key] = true;
+    return acc;
+  }, {}),
   products: [],
   productFilter: "",
   prices: [],
@@ -70,15 +88,37 @@ function getCategoryName(code) {
   return entry ? entry.name : code;
 }
 
-function createActionButton(label, className, handler) {
+function createActionButton(label, className, handler, iconClass="", ariaLabel="") {
   const button = document.createElement("button");
   button.type = "button";
-  button.textContent = label;
   button.className = className ? `small ${className}` : "small";
+  console.log(iconClass);
+
+  // Если есть иконка — добавляем
+  if (iconClass) {
+    const icon = document.createElement("i");
+    icon.className = iconClass;
+    button.appendChild(icon);
+  }
+
+  // Если есть текст — добавляем
+  if (label) {
+    const textSpan = document.createElement("span");
+    textSpan.textContent = label;
+    button.appendChild(textSpan);
+  }
+
+  // Для кнопки без текста — важно для доступности
+  if (!label && ariaLabel) {
+    button.setAttribute("aria-label", ariaLabel);
+    button.setAttribute("title", ariaLabel);
+  }
+
   button.addEventListener("click", (event) => {
     event.stopPropagation();
     handler();
   });
+
   return button;
 }
 
@@ -137,27 +177,99 @@ function populateCategorySelect() {
   }
 }
 
+function getVisibleSupplierColumns() {
+  return SUPPLIER_COLUMNS.filter((column) => column.always || state.supplierColumnsVisible[column.key]);
+}
+
+function renderSupplierHeader() {
+  const headerRow = document.querySelector("#suppliers-header-row");
+  if (!headerRow) return;
+  const columns = getVisibleSupplierColumns();
+  headerRow.innerHTML = columns.map((column) => `<th>${column.label}</th>`).join("");
+}
+
+function renderSupplierColumnControls() {
+  const container = document.querySelector("#supplier-columns-toggle");
+  if (!container) return;
+  const controls = SUPPLIER_COLUMNS.filter((column) => !column.always)
+    .map((column) => {
+      const checked = state.supplierColumnsVisible[column.key] !== false;
+      return `
+        <label class="checkbox-inline" style="flex-direction: row;">
+          <input type="checkbox" data-column="${column.key}" ${checked ? "checked" : ""} />
+          <span>${column.label}</span>
+        </label>
+      `;
+    })
+    .join("");
+  container.innerHTML = controls;
+
+  container.querySelectorAll("input[type=checkbox]").forEach((input) => {
+    input.addEventListener("change", (event) => {
+      const key = event.target.dataset.column;
+      state.supplierColumnsVisible[key] = event.target.checked;
+      renderSupplierHeader();
+      renderSuppliers();
+    });
+  });
+}
+
+function setSupplierColumnsOpen(isOpen) {
+  const panel = document.querySelector("#supplier-columns-toggle");
+  if (!panel) return;
+  if (isOpen) {
+    panel.hidden = false;
+    panel.classList.add("open");
+  } else {
+    panel.hidden = true;
+    panel.classList.remove("open");
+  }
+}
+
+function isSupplierColumnsOpen() {
+  const panel = document.querySelector("#supplier-columns-toggle");
+  return panel ? !panel.hidden : false;
+}
+
 async function loadSuppliers() {
   state.suppliers = await fetchJSON(`${API_BASE}/suppliers`);
+  renderSupplierHeader();
+  renderSupplierColumnControls();
   renderSuppliers();
   populateSupplierSelects();
 }
 
 function renderSuppliers() {
   const tbody = document.querySelector("#suppliers-table tbody");
+  const headerRow = document.querySelector("#suppliers-header-row");
+  if (!tbody || !headerRow) return;
+  const columns = getVisibleSupplierColumns();
   const filter = (state.supplierFilter || "").trim().toLowerCase();
   const suppliers = filter
     ? state.suppliers.filter((supplier) => {
-        const values = [supplier.name, supplier.address, supplier.contact, supplier.website].filter(Boolean);
+        const values = [
+          supplier.name,
+          supplier.address,
+          supplier.contact,
+          supplier.website,
+          supplier.nomenclature,
+          supplier.counterpartyType,
+          supplier.techAudit,
+          supplier.finAudit,
+          supplier.workExperience,
+        ].filter(Boolean);
         return values.some((value) => value.toLowerCase().includes(filter));
       })
     : [...state.suppliers];
 
+  headerRow.innerHTML = columns.map((column) => `<th>${column.label}</th>`).join("");
   tbody.innerHTML = "";
 
   if (!suppliers.length) {
     const tr = document.createElement("tr");
-    tr.innerHTML = '<td class="table-empty" colspan="5">По вашему запросу ничего не найдено</td>';
+    tr.innerHTML = `
+      <td class="table-empty" colspan="${columns.length}">Нет записей, подходящих под фильтр</td>
+    `;
     tbody.appendChild(tr);
     return;
   }
@@ -165,21 +277,63 @@ function renderSuppliers() {
   suppliers.forEach((supplier) => {
     const tr = document.createElement("tr");
     tr.dataset.id = supplier.id;
-    tr.innerHTML = `
-      <td>${supplier.id}</td>
-      <td>${supplier.name ?? ""}</td>
-      <td>${supplier.contact ?? ""}</td>
-      <td>${supplier.rating ?? ""}</td>
-    `;
+    const cells = columns.map((column) => {
+      let value = "";
+      switch (column.key) {
+        case "id":
+          value = supplier.id;
+          break;
+        case "name":
+          value = supplier.name;
+          break;
+        case "contact":
+          value = supplier.contact;
+          break;
+        case "rating":
+          value = supplier.rating;
+          break;
+        case "website":
+          value = supplier.website;
+          break;
+        case "nomenclature":
+          value = supplier.nomenclature;
+          break;
+        case "counterpartyType":
+          value = supplier.counterpartyType;
+          break;
+        case "techAudit":
+          value = supplier.techAudit;
+          break;
+        case "finAudit":
+          value = supplier.finAudit;
+          break;
+        case "workExperience":
+          value = supplier.workExperience;
+          break;
+        case "actions":
+          return '<td class="actions-col"></td>';
+        default:
+          value = "";
+      }
+      return `<td>${value ?? ""}</td>`;
+    });
+
+    tr.innerHTML = cells.join("");
     tr.addEventListener("click", () => selectSupplier(supplier.id));
     if (state.selectedSupplierId === supplier.id) {
       tr.classList.add("selected");
     }
 
-    const actionsTd = document.createElement("td");
-    actionsTd.className = "actions-col";
-    actionsTd.appendChild(createActionButton("Удалить", "danger", () => deleteSupplier(supplier.id)));
-    tr.appendChild(actionsTd);
+    if (columns.some((column) => column.key === "actions")) {
+      let actionsTd = tr.querySelector(".actions-col");
+      if (!actionsTd) {
+        actionsTd = document.createElement("td");
+        actionsTd.className = "actions-col";
+        tr.appendChild(actionsTd);
+      }
+      actionsTd.innerHTML = "";
+      actionsTd.appendChild(createActionButton("", "danger", () => deleteSupplier(supplier.id), "fa fa-trash", "Удалить поставщика"));
+    }
 
     tbody.appendChild(tr);
   });
@@ -206,6 +360,11 @@ function selectSupplier(id) {
   document.querySelector("#supplier-website").value = supplier.website ?? "";
   document.querySelector("#supplier-rating").value =
     supplier.rating !== null && supplier.rating !== undefined ? supplier.rating : "";
+  document.querySelector("#supplier-nomenclature").value = supplier.nomenclature ?? "";
+  document.querySelector("#supplier-counterparty-type").value = supplier.counterpartyType ?? "";
+  document.querySelector("#supplier-tech-audit").value = supplier.techAudit ?? "";
+  document.querySelector("#supplier-fin-audit").value = supplier.finAudit ?? "";
+  document.querySelector("#supplier-work-experience").value = supplier.workExperience ?? "";
   renderSuppliers();
 }
 
@@ -234,6 +393,11 @@ async function submitSupplier(event) {
     rating: document.querySelector("#supplier-rating")?.value
       ? Number(document.querySelector("#supplier-rating").value)
       : null,
+    nomenclature: document.querySelector("#supplier-nomenclature")?.value.trim() || null,
+    counterpartyType: document.querySelector("#supplier-counterparty-type")?.value.trim() || null,
+    techAudit: document.querySelector("#supplier-tech-audit")?.value.trim() || null,
+    finAudit: document.querySelector("#supplier-fin-audit")?.value.trim() || null,
+    workExperience: document.querySelector("#supplier-work-experience")?.value.trim() || null,
   };
 
   try {
@@ -347,7 +511,7 @@ function populateProductSelects() {
   const options =
     '<option value="">Выберите товар</option>' +
     state.products
-      .map((product) => `<option value="${product.id}">${product.partNumber} — ${product.name}</option>`)
+      .map((product) => `<option value="${product.id}">${product.partNumber} - ${product.name}</option>`)
       .join("");
   if (competitionSelect) {
     competitionSelect.innerHTML = options;
@@ -569,7 +733,7 @@ function renderPrices() {
     const supplier = suppliersLookup.get(price.supplierId);
     const categoryName = product ? getCategoryName(product.category) : "";
     const productCell = product
-      ? `${product.partNumber} — ${product.name}${categoryName ? ` (${categoryName})` : ""}`
+      ? `${product.partNumber} - ${product.name}${categoryName ? ` (${categoryName})` : ""}`
       : price.productId;
     tr.innerHTML = `
       <td>${price.id}</td>
@@ -691,6 +855,29 @@ function bindEvents() {
     state.supplierFilter = event.target.value;
     renderSuppliers();
   });
+  const columnsButton = document.querySelector("#supplier-columns-toggle-button");
+  const columnsPanel = document.querySelector("#supplier-columns-toggle");
+  const columnsWrap = document.querySelector(".columns-dropdown");
+  if (columnsButton && columnsPanel) {
+    columnsButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const shouldOpen = !isSupplierColumnsOpen();
+      setSupplierColumnsOpen(shouldOpen);
+      if (shouldOpen) {
+        renderSupplierColumnControls();
+      }
+    });
+    document.addEventListener("click", (event) => {
+      if (columnsWrap && !columnsWrap.contains(event.target)) {
+        setSupplierColumnsOpen(false);
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        setSupplierColumnsOpen(false);
+      }
+    });
+  }
 
   document.querySelector("#product-form")?.addEventListener("submit", submitProduct);
   document.querySelector("#product-reset")?.addEventListener("click", resetProductForm);

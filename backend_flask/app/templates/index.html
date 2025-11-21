@@ -1,15 +1,16 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Handbook Admin</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/awesome/css/all.css') }}" />
   </head>
   <body>
     <header>
-      <h1>Панель управления справочником</h1>
-      <p>Управление поставщиками, товарами и конкурентной картой</p>
+      <h1>Справочник поставщиков и заявок</h1>
+      <p>Управление поставщиками, товарами и ценами</p>
       <div id="notification" role="status" aria-live="polite"></div>
     </header>
 
@@ -17,7 +18,7 @@
       <nav class="tabs">
         <button class="tab-button active" data-tab="suppliers">Поставщики</button>
         <button class="tab-button" data-tab="products">Товары</button>
-        <button class="tab-button" data-tab="competition">Конкурентная карта</button>
+        <button class="tab-button" data-tab="competition">Карта конкуренции</button>
         <button class="tab-button" data-tab="prices">Цены поставщиков</button>
       </nav>
 
@@ -35,8 +36,8 @@
               <input type="text" id="supplier-address" />
             </label>
             <label>
-              Контакт
-              <input type="text" id="supplier-contact" />
+              Контакты
+              <textarea id="supplier-contact" rows="2"></textarea>
             </label>
             <label>
               Сайт
@@ -45,6 +46,26 @@
             <label>
               Рейтинг
               <input type="number" step="0.1" id="supplier-rating" />
+            </label>
+            <label>
+              Номенклатура
+              <input type="text" id="supplier-nomenclature" />
+            </label>
+            <label>
+              Тип контрагента
+              <input type="text" id="supplier-counterparty-type" />
+            </label>
+            <label>
+              Тех. аудит
+              <input type="text" id="supplier-tech-audit" />
+            </label>
+            <label>
+              Фин. аудит
+              <input type="text" id="supplier-fin-audit" />
+            </label>
+            <label>
+              Опыт работы
+              <input type="text" id="supplier-work-experience" />
             </label>
           </div>
           <div class="actions">
@@ -58,16 +79,14 @@
             id="supplier-search"
             placeholder="Поиск по названию, адресу или контакту..."
           />
+          <div class="columns-dropdown">
+            <button type="button" id="supplier-columns-toggle-button" class="secondary">Столбцы</button>
+            <div class="columns-toggle" id="supplier-columns-toggle" hidden></div>
+          </div>
         </div>
-        <table id="suppliers-table">
+        <table id="suppliers-table" class="table-wide">
           <thead>
-            <tr>
-              <th>ID</th>
-              <th>Название</th>
-              <th>Контакт</th>
-              <th>Рейтинг</th>
-              <th>Действия</th>
-            </tr>
+            <tr id="suppliers-header-row"></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -99,11 +118,11 @@
               <input type="text" id="product-serial" />
             </label>
             <label>
-              Чертёж
+              Схема
               <input type="text" id="product-scheme" />
             </label>
             <label>
-              Позиция на чертеже
+              Позиция на схеме
               <input type="text" id="product-pos-scheme" />
             </label>
             <label>
@@ -123,7 +142,7 @@
               <textarea id="product-comment" rows="2"></textarea>
             </label>
           </div>
-          
+
           <div class="actions">
             <button type="submit">Сохранить</button>
             <button type="button" id="product-reset">Сброс</button>
@@ -143,6 +162,7 @@
               <th>Артикул</th>
               <th>Название</th>
               <th>Бренд</th>
+              <th>Комментарий</th>
               <th>Действия</th>
             </tr>
           </thead>
@@ -151,13 +171,13 @@
       </section>
 
       <section class="tab-panel" data-tab="competition">
-        <h2>Конкурентная карта (поставщики → цены)</h2>
+        <h2>Карта конкуренции (поставщики × товар)</h2>
         <div class="grid two">
           <label>
             Товар
             <select id="competition-product-select"></select>
           </label>
-          <button type="button" id="competition-refresh">Обновить карту</button>
+          <button type="button" id="competition-refresh">Обновить данные</button>
         </div>
         <table id="competition-table">
           <thead>

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Optional
 
-from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import INTERVAL
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -41,11 +41,16 @@ class Supplier(db.Model):
     __tablename__ = "suppliers"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
-    address: Mapped[Optional[str]] = mapped_column(String(200))
-    contact: Mapped[Optional[str]] = mapped_column(String(100))
-    website: Mapped[Optional[str]] = mapped_column(String(100))
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    address: Mapped[Optional[str]] = mapped_column(Text)
+    contact: Mapped[Optional[str]] = mapped_column(Text)
+    website: Mapped[Optional[str]] = mapped_column(Text)
     rating: Mapped[Optional[float]] = mapped_column(Float)
+    nomenclature: Mapped[Optional[str]] = mapped_column(Text)
+    counterparty_type: Mapped[Optional[str]] = mapped_column(Text)
+    tech_audit: Mapped[Optional[str]] = mapped_column(Text)
+    fin_audit: Mapped[Optional[str]] = mapped_column(Text)
+    work_experience: Mapped[Optional[str]] = mapped_column(Text)
 
     prices: Mapped[list["SupplierProductPrice"]] = relationship(
         back_populates="supplier", cascade="all, delete-orphan"

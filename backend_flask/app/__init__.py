@@ -21,6 +21,14 @@ def _apply_schema_migrations() -> None:
         alter table if exists request_items
         alter column part_number type varchar(100) using part_number::text,
         alter column pos_scheme type varchar(100) using pos_scheme::text
+        """,
+        """
+        alter table if exists suppliers
+        add column if not exists nomenclature text,
+        add column if not exists counterparty_type text,
+        add column if not exists tech_audit text,
+        add column if not exists fin_audit text,
+        add column if not exists work_experience text
         """
     ]
 

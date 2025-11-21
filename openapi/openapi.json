@@ -2,7 +2,7 @@
   "openapi": "3.0.4",
   "info": {
     "title": "Handbook API",
-    "version": "1.1.2",
+    "version": "1.2.0",
     "description": "REST API for managing suppliers, products, requests, and related entities."
   },
   "servers": [
@@ -260,6 +260,26 @@
             "type": "number",
             "format": "float",
             "nullable": true
+          },
+          "nomenclature": {
+            "type": "string",
+            "nullable": true
+          },
+          "counterpartyType": {
+            "type": "string",
+            "nullable": true
+          },
+          "techAudit": {
+            "type": "string",
+            "nullable": true
+          },
+          "finAudit": {
+            "type": "string",
+            "nullable": true
+          },
+          "workExperience": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -289,6 +309,21 @@
           "rating": {
             "type": "number",
             "format": "float"
+          },
+          "nomenclature": {
+            "type": "string"
+          },
+          "counterpartyType": {
+            "type": "string"
+          },
+          "techAudit": {
+            "type": "string"
+          },
+          "finAudit": {
+            "type": "string"
+          },
+          "workExperience": {
+            "type": "string"
           }
         },
         "required": [

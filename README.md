@@ -66,7 +66,7 @@ OpenAPI docs:
 
 ## Importing data from Excel
 
-- Place `ITOG 03.12.24.xlsx` next to `scripts/import_excel.py`
+- Place `ИТОГ 03.12.24.xlsx` next to `scripts/import_excel.py`
 - Run the importer (override host/port if running outside Docker):
   ```powershell
   python scripts\import_excel.py --excel "ИТОГ 03.12.24.xlsx" --host localhost --port 5432
@@ -78,3 +78,12 @@ OpenAPI docs:
 1. Introduce Alembic migrations
 2. Extend UI with request management and advanced filters
 3. Add authentication and role-based access control
+
+## Supplier registry import
+
+- Place `Реестр поставщиков_новый.xlsx` next to `scripts/import_suppliers_registry.py`
+- Run the importer (override host/port if running outside Docker):
+  ```powershell
+  python scripts\import_suppliers_registry.py --excel "Реестр поставщиков_новый.xlsx" --host localhost --port 5432
+  ```
+- The script folds duplicate supplier names, adds the new text columns if needed, and upserts records without overwriting existing data with empty values
